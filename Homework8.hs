@@ -142,6 +142,10 @@ many1' p = do
   xs <- many p
   return (x:xs)
 
+-- from solution
+many1'' :: Parser a -> Parser [a]
+many1'' p = (:) <$> p <*> many p
+
 letterOrDigit :: Parser Char
 letterOrDigit = P go
   where
