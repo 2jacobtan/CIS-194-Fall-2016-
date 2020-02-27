@@ -42,7 +42,7 @@ instance Functor Parser where
       f' s = case runParser p s of
         Nothing -> Nothing
         Just (x,s') -> Just (f x, s')
-
+{- 
 instance Applicative Parser where
   pure = pureParser
   fp <*> fx = P g
@@ -52,6 +52,13 @@ instance Applicative Parser where
         Just (f,s) -> case runParser fx s of
           Nothing -> Nothing
           Just (x,s') -> Just (f x,s')
+ -}
+instance Applicative Parser where
+  pure = pureParser
+  p1 <*> p2 = P $ \input -> do
+    (f,rest1) <- runParser p1 input
+    (x,rest2) <- runParser p2 rest1
+    return (f x, rest2)
 
 instance Monad Parser where
   return = pureParser
@@ -89,6 +96,9 @@ many p = P $ Just . go []
       Nothing -> (l,s)
       Just (x,s') -> go (l++[x]) s'
 
+many' :: Parser a -> Parser [a]
+many' p = ( (:) <$> p <*> many' p ) `orElse` return []
+
 -- ? try to use "do" notation
 sepBy :: Parser a -> Parser () -> Parser [a]
 sepBy p1 p2 = P $ Just . go
@@ -98,6 +108,9 @@ sepBy p1 p2 = P $ Just . go
       Just (x,s') ->
         let Just (l,s'') = runParser (many $ p2 *> p1) s'
         in ([x] ++ l,s'')
+
+sepBy' :: Parser a -> Parser () -> Parser [a]
+sepBy' p1 p2 = ( (:) <$> p1 <*>  many (p2 *> p1) ) `orElse` return []
 
 --copy-pasta from Homework 8
 parseCSV :: Parser [[String]]
